@@ -3,11 +3,6 @@ import { drawRectangle } from './drawRectangle.js';
 import { drawCircle } from './drawCircule.js';
 import { printScreen } from './printScreen.js';
 import { Duplex } from 'stream';
-import { createReadStream, ReadStream } from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export const commandHandler = async (command: string, duplex: Duplex): Promise<void> => {
   const parseCommand: string[] = command.split(' ');
@@ -47,27 +42,16 @@ export const commandHandler = async (command: string, duplex: Duplex): Promise<v
       sendResponse(duplex, command);
       break;
     case 'prnt_scrn':
-      const isDo: boolean = await printScreen();
-      if (!isDo) break;
-      const readStream: ReadStream = createReadStream(path.join(__dirname, 'print-screen.png'));
-      let buffer = '';
-      readStream
-        .on('data', (chunk: Buffer) => {
-          buffer += Buffer.from(chunk).toString('base64');
-        })
-        .on('end', () => {
-          sendResponse(duplex, command, buffer);
-        })
-        .on('error', (error) => {
-          console.log(error.message);
-        });
+      const isDo: string | boolean = await printScreen();
+      if (typeof isDo !== 'boolean') {
+        sendResponse(duplex, command, isDo);
+      }
       break;
     default:
       break;
   }
 };
 
-const sendPrintScreen = async (): Promise<Promise<string> | Promise<void>> => {};
 const sendResponse = (duplex: Duplex, command: string, result?: string): void => {
   let response: string = command;
   if (result) response += ' ' + result;

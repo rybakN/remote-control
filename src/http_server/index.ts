@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as http from 'http';
-import WebSocket, { Server, WebSocketServer, createWebSocketStream } from 'ws';
+import WebSocket, { Server, WebSocketServer, createWebSocketStream, AddressInfo } from 'ws';
 import { commandHandler } from '../handler/commandHandler.js';
 import { Duplex } from 'stream';
 
@@ -22,10 +22,13 @@ export const server = http.createServer(function (req, res) {
 const wss: Server = new WebSocketServer({ server });
 
 wss.on('listening', () => {
-  console.log(wss.address());
+  const info: AddressInfo | string = wss.address();
+  if (typeof info !== 'string')
+    console.log(`WebsocketServer port: ${info.port}\nURL: ws://localhost:${info.port}\nfamily: ${info.family}`);
 });
 
 wss.on('connection', (ws: WebSocket) => {
+  console.log('\x1b[36m%s\x1b[0m', 'Start connection');
   const duplex: Duplex = createWebSocketStream(ws);
 
   duplex.on('data', async (data) => {
@@ -37,16 +40,7 @@ wss.on('connection', (ws: WebSocket) => {
   });
 
   duplex.on('end', () => {
-    console.log('Goodbye!');
+    console.log('\x1b[36m%s\x1b[0m', 'Close connection');
     duplex.destroy();
   });
-});
-
-wss.on('wsClientError', (error) => {
-  console.log(error.message);
-  wss.close();
-});
-
-wss.on('close', () => {
-  wss.close();
 });
