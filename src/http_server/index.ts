@@ -21,22 +21,15 @@ export const server = http.createServer(function (req, res) {
 
 const wss: Server = new WebSocketServer({ server });
 
-wss.on('listening', (ws: WebSocket) => {
+wss.on('listening', () => {
   console.log(wss.address());
 });
 
 wss.on('connection', (ws: WebSocket) => {
-  const duplex = createWebSocketStream(ws);
+  const duplex: Duplex = createWebSocketStream(ws);
 
   duplex.on('data', async (data) => {
-    let response: string = data.toString();
-    const answer: string | void = await commandHandler(data.toString());
-
-    if (answer) response += ' ' + answer;
-
-    duplex._write(response, 'utf-8', async (error) => {
-      if (error) console.log(error.message);
-    });
+    await commandHandler(data.toString(), duplex);
   });
 
   duplex.on('error', () => {
@@ -45,7 +38,7 @@ wss.on('connection', (ws: WebSocket) => {
 
   duplex.on('end', () => {
     console.log('Goodbye!');
-    // duplex.destroy();
+    duplex.destroy();
   });
 });
 
