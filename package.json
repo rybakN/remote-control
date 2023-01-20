@@ -5,9 +5,7 @@
     "main": "index.ts",
     "type": "module",
     "scripts": {
-        "start": "node index.ts",
-        "start:dev": "npx nodemon",
-        "test": "echo \"Error: no test specified\" && exit 1"
+        "start:dev": "npx nodemon"
     },
     "author": "Davydau Mikalai",
     "keywords": [],
