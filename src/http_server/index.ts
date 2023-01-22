@@ -24,23 +24,36 @@ const wss: Server = new WebSocketServer({ server });
 wss.on('listening', () => {
   const info: AddressInfo | string = wss.address();
   if (typeof info !== 'string')
-    console.log(`WebsocketServer port: ${info.port}\nURL: ws://localhost:${info.port}\nfamily: ${info.family}`);
+    console.log(`WebsocketServer port: ${info.port}\nRequest URL: ws://localhost:${info.port}\nfamily: ${info.family}`);
 });
 
 wss.on('connection', (ws: WebSocket) => {
   console.log('\x1b[36m%s\x1b[0m', 'Start connection');
-  const duplex: Duplex = createWebSocketStream(ws);
+  const stream: Duplex = createWebSocketStream(ws);
 
-  duplex.on('data', async (data) => {
-    await commandHandler(data.toString(), duplex);
+  stream.on('data', async (data) => {
+    const result = await commandHandler(data.toString());
+    if (!result) {
+      sendResponse(stream, data.toString().split(' ')[0]);
+    } else {
+      sendResponse(stream, data.toString().split(' ')[0], result);
+    }
   });
 
-  duplex.on('error', () => {
-    console.log('ERROR');
+  stream.on('error', (error) => {
+    console.log(error.message);
   });
 
-  duplex.on('end', () => {
+  stream.on('end', () => {
     console.log('\x1b[36m%s\x1b[0m', 'Close connection');
-    duplex.destroy();
+    stream.destroy();
   });
 });
+
+const sendResponse = (stream: Duplex, command: string, result: string = ''): void => {
+  let response: string = command;
+  if (result) response += result;
+  stream._write(response, 'base64', (error) => {
+    if (error) console.log(error.message);
+  });
+};
